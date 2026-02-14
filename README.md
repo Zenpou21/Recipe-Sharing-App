@@ -53,6 +53,10 @@ A modern React-based recipe application built with TypeScript, featuring async o
 - **Problem:** Closing drawer mid-submit still created the recipe
 - **Solution:** Added useEffect to cancel requests when drawer closes
 
+**Challenge 5: Async Coordination**
+- **Problem:** Managing multiple async operations with race conditions and reliability concerns
+- **Solution:** Debounced search (500ms), optimistic UI with rollback, AbortController cancellation, and exponential backoff retry (1s → 2s → 4s)
+
 ## Tools & Libraries
 
 ### Frameworks & Core Libraries
@@ -108,3 +112,21 @@ A modern React-based recipe application built with TypeScript, featuring async o
    ```bash
    git clone https://github.com/Zenpou21/Recipe-Sharing-App.git
    cd Recipe-Sharing-App
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Start the development server**
+   ```bash
+   npm run dev
+   ```
+
+4. **Open your browser**
+   - Navigate to `http://localhost:5173`
+
+### Live Demo
+
+[View Live Demo](https://rsa.flowcsolutions.com)
