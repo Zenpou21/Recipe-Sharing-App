@@ -16,7 +16,7 @@ export interface Recipe {
   updated_at?: string;
 }
 
-const API_BASE_URL = "http://127.0.0.1:8005/api";
+const API_BASE_URL = "https://rsa-api.flowcsolutions.com/api";
 const LATENCY_MS = 1000;
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
