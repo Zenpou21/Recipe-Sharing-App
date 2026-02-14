@@ -53,10 +53,6 @@ A modern React-based recipe application built with TypeScript, featuring async o
 - **Problem:** Closing drawer mid-submit still created the recipe
 - **Solution:** Added useEffect to cancel requests when drawer closes
 
-**Challenge 5: AbortError Showing to Users**
-- **Problem:** Cancelled requests showed "AbortError: Aborted" toast
-- **Solution:** Created isAbortError() helper checking multiple error types
-
 ## Tools & Libraries
 
 ### Frameworks & Core Libraries
