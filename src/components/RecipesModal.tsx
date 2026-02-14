@@ -1,6 +1,7 @@
-import { Button, Image, Modal, ModalBody, ModalContent, ModalFooter, Spinner } from "@heroui/react";
+import { Button, Chip, Image, Modal, ModalBody, ModalContent, ModalFooter } from "@heroui/react";
 import type { Recipe } from "../hooks/useRecipes";
 import FoodBanner from "../assets/images/recipe-banner.jpg";
+import ModalSkeleton from "./ModalSkeleton";
 interface RecipesModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
@@ -16,12 +17,13 @@ export default function RecipesModal({ isOpen, onOpenChange, recipe, loading }: 
           <>
             <ModalBody className="p-0">
               {loading ? (
-                <div className="flex items-center justify-center h-96">
-                  <Spinner size="md" color="primary" />
-                </div>
+               <ModalSkeleton />
               ) : (
                 <div>
-                  <div>
+                  <div className="relative">
+                    <Chip size="sm" className="absolute z-20 top-2 right-2 bg-white text-primary">
+                      Last Updated: {recipe?.updated_at && new Date(recipe.updated_at).toLocaleString()}
+                    </Chip>
                     <Image src={FoodBanner} radius="sm" />
                   </div>
                   <div className="p-4 space-y-2">

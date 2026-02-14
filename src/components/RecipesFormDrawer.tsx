@@ -7,14 +7,14 @@ import {
   DrawerHeader,
   Form,
   Input,
-  Spinner,
   Textarea,
 } from "@heroui/react";
 import { Plus, Trash } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { Recipe, Ingredient } from "../hooks/useRecipes";
+import FormSkeleton from "./FormSkeleton";
 
-interface RecipesDrawerProps {
+interface RecipesFormDrawerProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   type: "create" | "update";
@@ -34,7 +34,6 @@ const useIngredients = () => {
     quantity: "",
     unit: "",
   });
-
   const addIngredient = () => {
     if (!newIngredient.name.trim()) return;
 
@@ -72,14 +71,14 @@ const useIngredients = () => {
   };
 };
 
-export default function RecipesDrawer({
+export default function RecipesFormDrawer({
   isOpen,
   onOpenChange,
   type,
   initialData,
   loading,
   onSubmit,
-}: RecipesDrawerProps) {
+}: RecipesFormDrawerProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const [title, setTitle] = useState<string>("");
   const [instructions, setInstructions] = useState<string>("");
@@ -102,9 +101,9 @@ export default function RecipesDrawer({
 
   useEffect(() => {
     if (initialData && type === "update") {
-      setTitle(initialData.title || "");
-      setInstructions(initialData.instructions || "");
-      setIngredients(initialData.ingredients || []);
+      setTitle(initialData.title ?? "");
+      setInstructions(initialData.instructions ?? "");
+      setIngredients(initialData.ingredients ?? []);
     }
   }, [initialData, type]);
 
@@ -138,9 +137,7 @@ export default function RecipesDrawer({
 
             <DrawerBody className="w-full">
               {loading?.one ? (
-                <div className="flex items-center justify-center h-96">
-                  <Spinner size="md" color="primary" />
-                </div>
+                <FormSkeleton />
               ) : (
                 <div className="space-y-3">
                   <div>
@@ -231,7 +228,7 @@ export default function RecipesDrawer({
             </DrawerBody>
 
             <DrawerFooter>
-              <Button radius="sm" color="default" variant="bordered" onPress={onClose}>
+              <Button radius="sm" color="default" className="border" variant="bordered" onPress={onClose}>
                 Close
               </Button>
               <Button

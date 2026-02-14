@@ -1,7 +1,7 @@
 import { Button, Card, CardBody, Image, Input, useDisclosure } from "@heroui/react";
 import { ChefHat, Edit, Eye, Heart, Plus, Search, Trash } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import RecipesDrawer from "../../components/RecipesDrawer";
+import RecipesFormDrawer from "../../components/RecipesFormDrawer";
 import { useRecipes } from "../../hooks/useRecipes";
 import type { Recipe } from "../../hooks/useRecipes";
 import Skeleton from "../../components/Skeleton";
@@ -9,13 +9,14 @@ import FoodBanner from "../../assets/images/recipe-banner.jpg";
 import RecipesModal from "../../components/RecipesModal";
 import ConfirmationModal from "../../components/ConfirmationModal";
 export default function Recipes() {
-  const { allRecipes, getRecipes, createRecipe, updateRecipe, deleteRecipe, loading } = useRecipes();
+  const { allRecipes, getRecipes, createRecipe, updateRecipe, deleteRecipe, cancelRequest, loading } = useRecipes();
   const {
     isOpen: isDrawerOpen,
     onOpen: onDrawerOpen,
     onOpenChange: onDrawerOpenChange,
     onClose: onCloseDrawer,
   } = useDisclosure();
+
   const { isOpen: isViewModalOpen, onOpen: onViewModalOpen, onOpenChange: onViewModalOpenChange } = useDisclosure();
   const {
     isOpen: isConfirmationModalOpen,
@@ -51,6 +52,16 @@ export default function Recipes() {
     loadFavoritesFromStorage();
   }, []);
 
+  useEffect(() => {
+    if (!isDrawerOpen) {
+      cancelRequest(drawerType);
+    }
+
+    if(!isConfirmationModalOpen){
+        cancelRequest('delete');
+    }
+  }, [isDrawerOpen, drawerType, isConfirmationModalOpen]);
+
   const loadFavoritesFromStorage = () => {
     try {
       const stored = localStorage.getItem(FAVORITES_STORAGE_KEY);
@@ -81,6 +92,7 @@ export default function Recipes() {
 
     return () => clearTimeout(timer);
   }, [searchQuery]);
+
   const filteredRecipes = useMemo(() => {
     let filtered = recipeList;
 
@@ -102,13 +114,16 @@ export default function Recipes() {
     setSearchQuery(value);
   }, []);
 
-  const isFavorite = useCallback((recipeId: number | undefined): boolean => {
-    return recipeId ? favorites.has(recipeId) : false;
-  }, [favorites]);
+  const isFavorite = useCallback(
+    (recipeId: number | undefined): boolean => {
+      return recipeId ? favorites.has(recipeId) : false;
+    },
+    [favorites],
+  );
 
   const handleToggleFavorite = useCallback(
     async (recipeId: number) => {
-      const requestId = (favoriteRequestMap.current.get(recipeId) || 0) + 1;
+      const requestId = (favoriteRequestMap.current.get(recipeId) ?? 0) + 1;
       favoriteRequestMap.current.set(recipeId, requestId);
 
       const newFavorites = new Set(favorites);
@@ -147,6 +162,7 @@ export default function Recipes() {
   };
 
   const handleDeleteRecipe = (id: number | undefined) => {
+    if (loading.delete) return;
     onConfirmationModalOpen();
     setSelectedRecipe({ id } as Recipe);
   };
@@ -157,9 +173,11 @@ export default function Recipes() {
     try {
       await deleteRecipe(selectedRecipe.id);
       onCloseConfirmationModal();
-      fetchRecipes();
-    } catch (error) {
-      console.error("Failed to delete recipe:", error);
+      await fetchRecipes();
+    } catch (error: any) {
+      if (error?.code !== 'ERR_CANCELED' && error?.name !== 'AbortError') {
+        console.error("Failed to delete recipe:", error);
+      }
     }
   };
 
@@ -168,28 +186,30 @@ export default function Recipes() {
       if (drawerType === "create") {
         await createRecipe(data);
         onCloseDrawer();
-        fetchRecipes();
+        await fetchRecipes();
       } else {
         if (selectedRecipe?.id) {
           await updateRecipe(selectedRecipe.id, data);
           onCloseDrawer();
-          fetchRecipes();
+          await fetchRecipes();
         }
       }
-    } catch (error) {
-      console.error("Failed to submit recipe:", error);
+    } catch (error: any) {
+      if (error?.code !== 'ERR_CANCELED' && error?.name !== 'AbortError') {
+        console.error("Failed to submit recipe:", error);
+      }
     }
   };
 
   return (
     <div>
-      <div className="p-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold mb-4 flex items-center">
-          <ChefHat className="mr-2" />
+      <div className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <h1 className="text-2xl font-bold flex items-center ">
+          <ChefHat size={35} className="mr-1 text-primary" />
           Recipes
         </h1>
-        <div className="flex items-center gap-x-2">
-          <div>
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
+          <div className="w-full sm:w-auto">
             <Input
               radius="sm"
               placeholder="Search by Ingredients"
@@ -198,6 +218,7 @@ export default function Recipes() {
               onValueChange={handleSearchChange}
               isClearable
               onClear={() => setSearchQuery("")}
+              className="w-full"
             />
           </div>
           <div>
@@ -207,12 +228,19 @@ export default function Recipes() {
               color="primary"
               onPress={() => setShowFavoritesOnly(!showFavoritesOnly)}
               startContent={<Heart size={16} fill={showFavoritesOnly ? "currentColor" : "none"} />}
+              className="w-full sm:w-auto"
             >
               Favorites
             </Button>
           </div>
           <div>
-            <Button radius="sm" color="primary" startContent={<Plus size={16} />} onPress={handleCreateRecipe}>
+            <Button
+              radius="sm"
+              color="primary"
+              startContent={<Plus size={16} />}
+              onPress={handleCreateRecipe}
+              className="w-full sm:w-auto"
+            >
               Create New Recipe
             </Button>
           </div>
@@ -225,25 +253,27 @@ export default function Recipes() {
       ) : (
         <div>
           {filteredRecipes.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-12 text-center">
+            <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center">
               <Search size={48} className="text-default-300 mb-4" />
               <h3 className="text-lg font-medium mb-1">No recipes found</h3>
-              <p className="text-default-400 text-xs">
+              <p className="text-default-400 text-xs max-w-md">
                 {searchQuery
                   ? `No recipes match "${searchQuery}"`
                   : showFavoritesOnly
                     ? "No favorite recipes yet"
-                    : "Try adjusting your filters"}
+                    : recipeList.length === 0
+                      ? "No recipes available. Start by creating a new recipe!"
+                      : "Try adjusting your filters"}
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-5 gap-5 p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 p-6">
               {filteredRecipes.map((item, index) => (
-                <Card shadow="sm" key={index} className="w-full space-y-5" radius="sm">
+                <Card shadow="sm" key={index} className="space-y-5" radius="sm">
                   <CardBody className="p-0">
-                    <Image src={FoodBanner} radius="sm" />
-                    <div className=" p-3">
-                      <div className="font-medium">{item.title}</div>
+                    <Image src={FoodBanner} radius="sm" className="w-full aspect-video object-cover" />
+                    <div className="p-3">
+                      <div className="font-medium truncate">{item.title}</div>
                       <div className="text-xs text-default-400 truncate">{item.instructions}</div>
                       <div className="flex justify-end items-center pt-2">
                         <Button
@@ -251,16 +281,16 @@ export default function Recipes() {
                           radius="sm"
                           color="danger"
                           variant={"light"}
+                          size="sm"
                           onPress={() => item.id && handleToggleFavorite(item.id)}
-                          startContent={
-                            <Heart size={16} fill={isFavorite(item.id) ? "currentColor" : "none"} />
-                          }
+                          startContent={<Heart size={16} fill={isFavorite(item.id) ? "currentColor" : "none"} />}
                         />
                         <Button
                           isIconOnly
                           radius="sm"
                           color="primary"
                           variant="light"
+                          size="sm"
                           onPress={() => handleViewRecipe(item.id)}
                           startContent={<Eye size={16} />}
                         />
@@ -269,6 +299,7 @@ export default function Recipes() {
                           radius="sm"
                           color="warning"
                           variant="light"
+                          size="sm"
                           onPress={() => handleUpdateRecipe(item.id)}
                           startContent={<Edit size={16} />}
                         />
@@ -277,7 +308,9 @@ export default function Recipes() {
                           radius="sm"
                           color="default"
                           variant="light"
+                          size="sm"
                           onPress={() => handleDeleteRecipe(item.id)}
+                          isDisabled={loading.delete}
                           startContent={<Trash size={16} />}
                         />
                       </div>
@@ -289,7 +322,7 @@ export default function Recipes() {
           )}
         </div>
       )}
-      <RecipesDrawer
+      <RecipesFormDrawer
         isOpen={isDrawerOpen}
         onOpenChange={onDrawerOpenChange}
         type={drawerType}

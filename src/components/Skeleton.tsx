@@ -2,7 +2,7 @@ import {Card, Skeleton} from "@heroui/react";
 
 export default function App() {
   return (
-    <div className="grid grid-cols-5 gap-5 p-6">
+   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 p-6">
       {Array.from({ length: 10 }).map((_, index) => (
         <Card key={index} className="w-full space-y-5 h-58" radius="sm">
           <Skeleton>
