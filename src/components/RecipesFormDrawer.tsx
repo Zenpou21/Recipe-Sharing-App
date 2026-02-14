@@ -104,8 +104,10 @@ export default function RecipesFormDrawer({
       setTitle(initialData.title ?? "");
       setInstructions(initialData.instructions ?? "");
       setIngredients(initialData.ingredients ?? []);
+    } else if (type === "create" && isOpen) {
+      resetForm();
     }
-  }, [initialData, type]);
+  }, [initialData, type, isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
