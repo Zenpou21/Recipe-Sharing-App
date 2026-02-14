@@ -217,6 +217,7 @@ export default function RecipesFormDrawer({
                             onPress={() => deleteIngredient(index)}
                             type="button"
                             isIconOnly
+                            isDisabled={loading?.create || loading?.update}
                             startContent={<Trash size={16} />}
                           />
                         </div>
